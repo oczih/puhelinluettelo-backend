@@ -6,6 +6,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.send('Hello, world!');
+});
+
 morgan.token('personData', (req) => {
   if (req.method === 'POST' && req.body) {
     return JSON.stringify({name: req.body.name, number: req.body.number});
