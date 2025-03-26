@@ -1,10 +1,14 @@
 import React from 'react';
 
-const Filter = ({ onChangeHandler}) => (
-  <p>
-    Filter show with
-    <input onChange={onChangeHandler} />
-  </p>
+const Filter = ({ value, onChange }) => (
+  <div>
+    filter shown with: 
+    <input 
+      value={value}
+      onChange={onChange}
+      placeholder="Search names..."
+    />
+  </div>
 );
 
 export default Filter;

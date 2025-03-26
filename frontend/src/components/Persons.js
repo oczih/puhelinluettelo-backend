@@ -1,17 +1,19 @@
 import React from 'react';
 
-const Persons = ({ persons, deletePerson }) => {
-  if (!Array.isArray(persons)) return null;
+const Persons = ({ persons, onDelete }) => {
   return (
     <div>
-      {persons.map((person) => (
-        <div key={person.id}>
-          {person.name} {person.number}{' '}
-          <button onClick={deletePerson} value={person.id}>Delete</button>
-        </div>
-      ))}
+      <ul>
+        {persons.map(person => (
+          <li key={person.id}>
+            {person.name} {person.number}
+            <button onClick={() => onDelete(person.id)}>delete</button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
+
 
 export default Persons;
