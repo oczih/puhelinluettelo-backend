@@ -1,55 +1,126 @@
+require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 const morgan = require('morgan');
-const path = require("path");
+const mongoose = require('mongoose');
+const cors = require('cors');
+const Person = require('./models/person');
+
 const app = express();
+const port = process.env.PORT || 3001;
+
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('dist'));
-app.use(morgan(':method :url :status :res[content-length] - :response-time ms'));
+app.use(morgan(':method :url - :body'));
+app.use(express.static('build'));
 
-let persons = [
-  { id: 1, name: "Arto Hellas", number: "040-123456" },
-  { id: 2, name: "Ada Lovelace", number: "39-44-5323523" },
-  { id: 3, name: "Dan Abramov", number: "12-43-234345" },
-  { id: 4, name: "Mary Poppendieck", number: "39-23-6423122" }
-];
 
-app.get('/api/persons', (req, res) => res.json(persons));
+morgan.token('body', (req) => JSON.stringify(req.body));
 
-app.get('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const person = persons.find(p => p.id === id);
-  person ? res.json(person) : res.status(404).json({ error: 'Person not found' });
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+  if (error.name === 'CastError') {
+    return response.status(400).json({ error: 'Malformatted ID' });
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message });
+  }
+  next(error);
+};
+
+
+const unknownEndpoint = (req, res) => {
+  res.status(404).json({ error: 'Unknown endpoint' });
+};
+
+app.post('/api/persons', (req, res, next) => {
+  const body = req.body;
+
+  if (!body.name || !body.number) {
+    return res.status(400).json({ error: 'name or number missing' });
+  }
+  const person = new Person({
+    name: body.name,
+    number: body.number,
+  });
+
+  person.save()
+    .then(savedPerson => {
+      res.json(savedPerson);
+    })
+    .catch(error => next(error));
 });
 
-app.delete('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id);
-  persons = persons.filter(person => person.id !== id);
-  res.status(204).end();
+
+app.get('/api/persons', (req, res, next) => {
+  Person.find({})
+    .then(people => res.json(people))
+    .catch(error => next(error));
 });
+
+
+app.get('/api/persons/:id', (req, res, next) => {
+  Person.findById(req.params.id)
+    .then(person => {
+      if (person) {
+        res.json(person);
+      } else {
+        res.status(404).end();
+      }
+    })
+    .catch(error => next(error));
+});
+
+
+app.put('/api/persons/:id', (req, res, next) => {
+  const { name, number } = req.body;
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid ID format' });
+  }
+
+  Person.findByIdAndUpdate(
+    req.params.id,
+    { name, number },
+    { new: true, runValidators: true, context: 'query' }
+  )
+    .then(updatedPerson => {
+      if (!updatedPerson) {
+        return res.status(404).json({ error: 'Person not found' });
+      }
+      res.json(updatedPerson);
+    })
+    .catch(error => next(error));
+});
+
+
+app.delete('/api/persons/:id', (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid ID format' });
+  }
+
+  Person.findByIdAndDelete(req.params.id)
+    .then(deletedPerson => {
+      if (!deletedPerson) {
+        return res.status(404).json({ error: 'Person not found' });
+      }
+      res.status(204).end();
+    })
+    .catch(error => next(error));
+});
+
 
 app.get('/info', (req, res) => {
-  res.send(`<p>Phonebook has info for ${persons.length} people</p><p>${new Date()}</p>`);
-});
-
-app.post('/api/persons', (req, res) => {
-  const { name, number } = req.body;
-  if (!name || !number) return res.status(400).json({ error: 'Name/number missing' });
-  if (persons.some(p => p.name === name)) return res.status(400).json({ error: 'Name must be unique' });
-
-  const person = { id: Math.floor(Math.random() * 1000000), name: name.trim(), number: number.trim() };
-  persons.push(person);
-  res.status(201).json(person);
-});
-
-app.use(express.static(path.join(__dirname, 'build')));
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  Person.countDocuments().then(count => {
+    const date = new Date();
+    res.send(`Phonebook has info for ${count} people at ${date}`);
+  });
 });
 
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.use(unknownEndpoint);
+app.use(errorHandler);
+
+
+app.listen(port, () => {
+  console.log(`API running on http://localhost:${port}`);
+});

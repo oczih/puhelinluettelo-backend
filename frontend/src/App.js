@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Filter from './components/Filter';
+import Persons from './components/Persons';
 
 const App = () => {
   const [persons, setPersons] = useState([]);
@@ -123,12 +125,6 @@ const App = () => {
   );
 };
 
-const Filter = ({ value, handleFilterChange }) => (
-  <div>
-    Filter: <input onChange={handleFilterChange} value={value} />
-  </div>
-);
-
 const Form = ({ onSubmitButton, nameValue, onNameChange, numberValue, onNumberChange }) => (
   <form onSubmit={onSubmitButton}>
     <div>Name: <input value={nameValue} onChange={onNameChange} /></div>
@@ -137,19 +133,6 @@ const Form = ({ onSubmitButton, nameValue, onNameChange, numberValue, onNumberCh
   </form>
 );
 
-const Persons = ({ persons, deletePerson }) => {
-  if (!Array.isArray(persons)) return null;
-  return (
-    <div>
-      {persons.map((person) => (
-        <div key={person.id}>
-          {person.name} {person.number}{' '}
-          <button onClick={deletePerson} value={person.id}>Delete</button>
-        </div>
-      ))}
-    </div>
-  );
-};
 
 const Message = ({ message }) => message ? <div className="goodMessage">{message}</div> : null;
 
