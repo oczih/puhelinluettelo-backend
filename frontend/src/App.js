@@ -134,6 +134,7 @@ const Form = ({ onSubmitButton, nameValue, onNameChange, numberValue, onNumberCh
 );
 
 
+
 const Message = ({ message }) => message ? <div className="goodMessage">{message}</div> : null;
 
 const Alert = ({ message }) => message ? <div className="alertMessage">{message}</div> : null;

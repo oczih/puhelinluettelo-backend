@@ -1,13 +1,13 @@
 import React from 'react';
 
-const Persons = ({ persons, onDelete }) => {
-  console.log('Rendering Persons component with persons:', persons);
+const Persons = ({ persons, deletePerson }) => {
+  if (!Array.isArray(persons)) return null;
   return (
     <div>
-      {persons.map(person => (
+      {persons.map((person) => (
         <div key={person.id}>
-          {person.name} {person.number}
-          <button onClick={() => onDelete(person.id)}>delete</button>
+          {person.name} {person.number}{' '}
+          <button onClick={deletePerson} value={person.id}>Delete</button>
         </div>
       ))}
     </div>
